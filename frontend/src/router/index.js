@@ -3,6 +3,7 @@ import Landing from '../views/Landing.vue'
 import Home from '../views/Home.vue'
 import Results from '../views/Results.vue'
 
+// All pages for my web app
 const routes = [
   {
     path: '/',
