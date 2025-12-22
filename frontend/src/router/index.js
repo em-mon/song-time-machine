@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Landing from '../views/Landing.vue'
+import Callback from '../views/Callback.vue'
 import Home from '../views/Home.vue'
 import Results from '../views/Results.vue'
 
@@ -9,6 +10,11 @@ const routes = [
     path: '/',
     name: 'Landing',
     component: Landing
+  },
+  {
+    path: '/callback',
+    name: 'Callback',
+    component: Callback
   },
   {
     path: '/home',

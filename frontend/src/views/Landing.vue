@@ -43,7 +43,7 @@ const login = async () => {
     const hashed = await sha256(code_verifier)
     const code_challenge = base64UrlEncode(hashed)
 
-    // Store verifier for token exchange later
+    // Store verifier for token exchange later (??? remove after session)
     sessionStorage.setItem('pkce_code_verifier', code_verifier)
 
     // Build the uri
