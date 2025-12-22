@@ -19,17 +19,25 @@ if (!code || !code_verifier) {
   router.push('/')
 }
 
+console.log("In callback fetch auth token")
 fetch('http://localhost:3000/auth/token', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ code, code_verifier })
 })
-  .then(res => res.json())
+  .then(async res => {
+    console.log('Response status after fetch');
+    return res.json()
+  })
   .then(data => {
-    // Store tokens
-    localStorage.setItem('access_token', data.access_token)
-    localStorage.setItem('refresh_token', data.refresh_token)
-    localStorage.setItem('expires_at', Date.now() + data.expires_in * 1000)
+    
+    console.log("Store tokens")
+    // Store tokens (expiration???)
+    sessionStorage.setItem('access_token', data.access_token)
+    sessionStorage.setItem('refresh_token', data.refresh_token)
+    sessionStorage.setItem('expires_at', Date.now() + data.expires_in * 1000)
+
+    sessionStorage.removeItem('pkce_code_verifier')
 
     router.push('/home')
   })
