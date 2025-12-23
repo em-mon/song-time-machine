@@ -5,7 +5,6 @@
         <input
             v-model="songTitle"
             placeholder="Enter song title"
-            required
         />
         <input
             v-model="artistName"
@@ -45,12 +44,14 @@ const results = ref([])
 
 const goToPast = () => {
     sessionStorage.setItem('operation', 'past')
-    router.push('./results')
+    router.push('./loading')
 }
 
+// if input year current year block off future option
+// consider: error messages displayed, none returned = no songs in that year, suggest options
 const goToFuture = () => {
     sessionStorage.setItem('operation', 'future')
-    router.push('./results')
+    router.push('./loading')
 }
 
 const searchSongs = async (e) => {
@@ -106,12 +107,23 @@ const searchSongs = async (e) => {
 
 const saveSong = async (track) => {
     // You now have access to all the track data from the search results
+    // if no release_date created_date ???
+    // check for tags???
     const metadata = {
+        title: track.title,
+        image: track.artwork_url,
+        bpm: track.bpm,
+        created_date: track.created_at,
+        genre: track.genre,
+        urn: track.urn,
+        key_signature: track.key_signature,
+        release_year: track.release_year,
+        tags: track.tag_list,
         artist: track.user.username,
-        // ... any other fields you need
+        access: track.access
     }
     
     // Save locally 
-    sessionStorage.setItem('savedSong', JSON.stringify(songData))
+    sessionStorage.setItem('savedSong', JSON.stringify(metadata))
 }
 </script>

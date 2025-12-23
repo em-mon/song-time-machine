@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Landing from '../views/Landing.vue'
 import Callback from '../views/Callback.vue'
 import Home from '../views/Home.vue'
+import Loading from '../views/Loading.vue'
 import Results from '../views/Results.vue'
 
 // All pages for my web app
@@ -20,6 +21,11 @@ const routes = [
     path: '/home',
     name: 'Home',
     component: Home
+  },
+  {
+    path: '/loading',
+    name: 'Loading',
+    component: Loading
   },
   {
     path: '/results',
