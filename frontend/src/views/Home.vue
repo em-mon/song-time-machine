@@ -1,10 +1,10 @@
 <template>
-  <div class="home">
+  <div class="page" id="home-page">
     <div>
-        <h1 class="title">PICK ANY SONG...</h1>
+        <h1 class="title" id="home-title">PICK ANY SONG...</h1>
     </div>
 
-    <div class="content">
+    <div class="content" id="home-content">
         <div>
             <form @submit="searchSongs">
                 <input
@@ -21,7 +21,7 @@
                     placeholder="*Enter year released*"
                     required
                 />
-                <button type="submit" class="portal-button">Search</button>
+                <button type="submit" id="home-portal-button">Search</button>
             </form>
         </div>
         
@@ -58,9 +58,9 @@
             </button>
         </div>
 
-        <div id="operationButtons">
-            <button id="pastButton" @click="goToPast">PAST</button>
-            <button id="futureButton" @click="goToFuture">FUTURE</button>
+        <div id="op-button-div">
+            <button class="op-button" id="past-button" @click="goToPast">PAST</button>
+            <button class="op-button" id="future-button" @click="goToFuture">FUTURE</button>
         </div>
     </div>
   </div>
@@ -183,26 +183,16 @@ const saveSong = async (track) => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-.home {
-  position: relative;
-  min-height: 100vh;
-  width: 100%;
+#home-page {
   display: block;
-  background: radial-gradient(ellipse at center, #2d1b69 0%, #1a0f3d 50%, #0a0520 100%);
-  overflow: hidden;
 }
 
-.content {
-  position: relative;
+#home-content {
   display: block;
-  z-index: 10;
-  text-align: center;
   justify-content: center;
-  padding: 2rem;
   height: 78vh;
   width: 100%;
+  left: 25%;
 }
 
 input {
@@ -210,20 +200,12 @@ input {
     margin-left: 8px;
 }
 
-.title {
-    font-family: 'Press Start 2P', cursive;
+#home-title {
     font-size: 3rem;
-    color: #fff;
-    text-shadow: 
-        0 0 10px #ff00ff,
-        0 0 20px #ff00ff,
-        0 0 30px #ff00ff,
-        0 0 40px #8b00ff,
-        0 0 70px #8b00ff;
     padding-left: 50px;
 }
 
-.portal-button {
+#home-portal-button {
     margin-left: 5px;
     position: relative;
     height: 2rem;
@@ -243,14 +225,7 @@ input {
         inset 0 0 20px rgba(255, 255, 255, 0.1);
 }
 
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.portal-button:hover {
-  transform: scale(1.1) translateY(-5px);
+#home-portal-button:hover {
   box-shadow: 
     0 0 40px rgba(255, 0, 255, 0.8),
     0 0 80px rgba(139, 0, 255, 0.6),
@@ -258,39 +233,20 @@ input {
   border-color: #ff00ff;
 }
 
-.portal-button:active {
+#home-portal-button:active {
   transform: scale(1.05) translateY(-2px);
 }
 
-.button-text {
-  position: relative;
-  z-index: 2;
-  display: block;
-}
-
-.button-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-.portal-button:hover .button-glow {
+#home-portal-button:hover .button-glow {
   width: 300px;
   height: 300px;
 }
 
-#pastButton {
+.op-button {
     position: relative;
     height: 4rem;
     width: 7rem;
     font-family: 'Press Start 2P', cursive;
-    background: linear-gradient(45deg, #d2e0e0, #049eaf, #00ffff);
     background-size: 200% 200%;
     border: 3px solid #fff;
     border-radius: 15px;
@@ -299,6 +255,10 @@ input {
     overflow: hidden;
     transition: all 0.3s ease;
     animation: gradientShift 3s ease infinite;
+}
+
+#past-button {
+    background: linear-gradient(45deg, #d2e0e0, #049eaf, #00ffff);
     box-shadow: 
         0 0 20px #d2e0e0,
         0 0 40px #049eaf,
@@ -306,7 +266,7 @@ input {
     margin-right: 200px;
 }
 
-#pastButton:hover {
+#past-button:hover {
   transform: scale(1.1) translateY(-5px);
   box-shadow: 
     0 0 40px #d2e0e0,
@@ -315,21 +275,8 @@ input {
   border-color:#00ffff;
 }
 
-
-#futureButton {
-    position: relative;
-    height: 4rem;
-    width: 7rem;
-    font-family: 'Press Start 2P', cursive;
+#future-button {
     background: linear-gradient(45deg, #c60bff, #750844, #ff00ae);
-    background-size: 200% 200%;
-    border: 3px solid #fff;
-    border-radius: 15px;
-    color: #fff;
-    cursor: pointer;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    animation: gradientShift 3s ease infinite;
     box-shadow: 
         0 0 20px #c60bff,
         0 0 40px #750844,
@@ -337,7 +284,7 @@ input {
     margin-right: 18px;
 }
 
-#futureButton:hover {
+#future-button:hover {
   transform: scale(1.1) translateY(-5px);
   box-shadow: 
     0 0 40px #c60bff,
@@ -346,19 +293,14 @@ input {
   border-color:#ff00ae;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .content {
-    padding: 1rem;
-  }
-  
-  .portal-button {
-    padding: 1rem 2rem;
-  }
+#op-button-div {
+    margin-top: 50px;
 }
 
-#operationButtons {
-    margin-top: 50px;
+h2 {
+    font-family: 'Press Start 2P', cursive;
+    color: white;
+    font-size: medium;
 }
 
 .carousel-container {
@@ -433,23 +375,5 @@ input {
     font-size: 0.8rem;
     color: #e0d4ff;
     text-shadow: 0 0 10px rgba(139, 0, 255, 0.5);
-}
-
-@media (max-width: 768px) {
-    .track-card {
-        min-width: 250px;
-        padding: 1.5rem 2rem;
-    }
-    
-    .arrow-button {
-        width: 50px;
-        height: 50px;
-    }
-}
-
-h2 {
-    font-family: 'Press Start 2P', cursive;
-    color: white;
-    font-size: medium;
 }
 </style>
