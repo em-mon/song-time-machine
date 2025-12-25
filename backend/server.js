@@ -168,7 +168,7 @@ app.post('/api/recommend', async (req, res) => {
     }
     const currentYear = new Date().getFullYear()
 
-    let minYear = 1000
+    let minYear = 1900
     let maxYear = currentYear
 
     if (operation === "past") {
