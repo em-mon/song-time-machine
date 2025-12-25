@@ -9,48 +9,27 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { inject } from 'vue'
 
 const router = useRouter()
+const apiClient = inject('apiClient')
 
-const params = new URLSearchParams(window.location.search)
-const code = params.get('code')
-
-const code_verifier = sessionStorage.getItem('pkce_code_verifier')
-
-// If fails redirect to failure page???
-if (!code || !code_verifier) {
-  router.push('/')
-}
-
-console.log("In callback fetch auth token")
-fetch('http://localhost:3000/auth/token', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ code, code_verifier })
-})
-  .then(async res => {
-    console.log('Response status after fetch');
-    return res.json()
-  })
-  .then(data => {
-    
-    console.log("Store tokens")
-    // Store tokens (expiration???)
-    sessionStorage.setItem('access_token', data.access_token)
-    sessionStorage.setItem('refresh_token', data.refresh_token)
-    sessionStorage.setItem('expires_at', Date.now() + data.expires_in * 1000)
-
-    sessionStorage.removeItem('pkce_code_verifier')
+onMounted(async () => {
+  try {
+    console.log("Exchanging tokens in callback")
+    await apiClient.exchange()
 
     router.push('/home')
-  })
-  .catch(err => {
-    console.error(err)
+  } catch (err) {
+    // maybe push failure page for errors???
     router.push('/')
-  })
+    console.err(err)
+    return
+  }
+})
 </script>
-
 
 <style scoped>
 /* make loading cycle???*/

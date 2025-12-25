@@ -32,6 +32,53 @@ class ApiClient {
         // Redirect user's browser to SoundCloud
         window.location.href = `${authorize_url}?${params.toString()}`
     }
+
+    async exchange() {
+        // Get authorization code from URL
+        const params = new URLSearchParams(window.location.search)
+        const code = params.get('code')
+        const state = params.get('state')
+
+        // Verify state to prevent CSRF
+        const savedState = sessionStorage.getItem('oauth_state')
+        const code_verifier = sessionStorage.getItem('pkce_code_verifier')
+
+        if (!code || !code_verifier) {
+            throw new Error("Missing code or verifier when exchanging, please try logging in again.")
+        }
+
+        if (state !== savedState) {
+            throw new Error("Mismatch authorization state, please try logging in again.")
+        }
+
+        try {
+            const response = await fetch(`${this.#_baseURL}/auth/token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, code_verifier })
+                })
+
+            if (!response.ok) {
+                throw new Error('Token exchange failed')
+            }
+
+            const data = await response.json()
+
+            // Store tokens
+            sessionStorage.setItem('access_token', data.access_token)
+            sessionStorage.setItem('refresh_token', data.refresh_token)
+            sessionStorage.setItem('expires_at', Date.now() + data.expires_in * 1000)
+
+            // Clean up
+            sessionStorage.removeItem('pkce_code_verifier')
+            sessionStorage.removeItem('oauth_state')
+
+            return
+        } catch (err) {
+            console.error('Token exchange failed:', err)
+            throw new Error(err)
+        }
+    }
 }
 
 // Helper functions for PKCE code challenge and state
@@ -56,7 +103,7 @@ function base64UrlEncode(buffer) {
 }
 
 // Create singleton instance
-export const apiClient = new ApiClient('http://localhost:3000')
+export const apiClient = new ApiClient(import.meta.env.VITE_BASE_URL)
 
 
 
