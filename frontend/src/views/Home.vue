@@ -31,7 +31,7 @@
             </button>
 
             <div class="track-display">
-                <button @click="saveSong(results[currentIndex])" class="track-card">
+                <button @click="saveSong(results[currentIndex])" class="track-card" :class="{ 'selected': isSelected }">
                     <img 
                         :src="results[currentIndex].artwork_url" 
                         :alt="results[currentIndex].title"
@@ -67,18 +67,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { inject } from 'vue'
 
 const router = useRouter()
+const apiClient = inject('apiClient')
 
 const songTitle = ref('')
 const artistName = ref('')
 const yearReleased = ref('')
+
 const results = ref([])
 const currentIndex = ref(0)
+const selectedTrackId = ref(null)
 
-const previousTrack = () => {
+const isSelected = computed(() => {
+    return results.value[currentIndex.value]?.id === selectedTrackId.value
+})
+
+function previousTrack() {
     if (currentIndex.value === 0) {
         currentIndex.value = results.value.length - 1
     } else {
@@ -86,7 +94,7 @@ const previousTrack = () => {
     }
 }
 
-const nextTrack = () => {
+function nextTrack() {
     if (currentIndex.value === results.value.length - 1) {
         currentIndex.value = 0
     } else {
@@ -94,71 +102,48 @@ const nextTrack = () => {
     }
 }
 
-const goToPast = () => {
+function goToPast() {
+    if (!selectedTrackId.value) {
+        return
+    }
     sessionStorage.setItem('operation', 'past')
+    router.push('./loading')
+}
+
+function goToFuture() {
+    if (!selectedTrackId.value) {
+        return
+    }
+    sessionStorage.setItem('operation', 'future')
     router.push('./loading')
 }
 // set default pic??? error handling???
 // must click submit before clicking past or future
 // if input year current year block off future option
 // consider: error messages displayed, none returned = no songs in that year, suggest options
-const goToFuture = () => {
-    sessionStorage.setItem('operation', 'future')
-    router.push('./loading')
-}
 
 const searchSongs = async (e) => {
     e.preventDefault()
 
-    let access_token = sessionStorage.getItem('access_token')
-    const expires_at = parseInt(sessionStorage.getItem('expires_at'), 10)
-
-    // If token is missing or expired, refresh it
-    if (!access_token || Date.now() >= expires_at) {
-        const refresh_token = sessionStorage.getItem('refresh_token')
-        if (!refresh_token) {
-            router.push('/') // no refresh token → force login
-            return
-        }
-
-        try {
-            const refreshRes = await fetch('http://localhost:3000/auth/refresh', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refresh_token })
-            })
-            const refreshData = await refreshRes.json()
-
-            access_token = refreshData.access_token
-            sessionStorage.setItem('access_token', access_token)
-            sessionStorage.setItem('refresh_token', refreshData.refresh_token)
-            sessionStorage.setItem('expires_at', Date.now() + refreshData.expires_in * 1000)
-        } catch (err) {
-            console.error('Refresh failed', err)
-            router.push('/') // redirect to login
-            return
-        }
+    try {
+        // set default to be empty???
+        results.value = await apiClient.searchTracks(songTitle.value, artistName.value, parseInt(yearReleased.value))
+        currentIndex.value = 0
+        selectedTrackId.value = null
+    } catch (err) {
+        console.error(err)
+        router.push('/')
+        return
     }
-
-    console.log("Try to search for track")
-    const response = await fetch('http://localhost:3000/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-        title: songTitle.value,
-        artist: artistName.value,
-        year: yearReleased.value,
-        access_token
-        })
-    })
-
-    const data = await response.json()
-    results.value = data
-
-    console.log("Searched track.")
 }
 
 const saveSong = async (track) => {
+    if (selectedTrackId.value === track.id) {
+        selectedTrackId.value = null
+        sessionStorage.removeItem('savedSong')
+        console.log('Song unselected')
+        return
+    }
     // You now have access to all the track data from the search results
     // if no release_date created_date ???
     // block future if year current year???
@@ -176,10 +161,13 @@ const saveSong = async (track) => {
         artist: track.user.username,
         access: track.access
     }
-    
+    selectedTrackId.value = track.id
+
     // Save locally 
     sessionStorage.setItem('savedSong', JSON.stringify(metadata))
+    console.log('Song saved:', metadata.title)
 }
+
 </script>
 
 <style scoped>
@@ -336,14 +324,32 @@ h2 {
 }
 
 .track-card {
+    position: relative;
     cursor: pointer;
     gap: 1rem;
     transition: all 0.3s ease;
     box-shadow: 0 0 30px rgba(139, 0, 255, 0.6);
     line-height: 1.6;
-    border: none;
+    border: 4px solid transparent; 
+    border-radius: 15px;  
     background: transparent; 
     padding: 0;
+    overflow: hidden; 
+}
+
+.track-card.selected {
+    border-color: rgba(255, 0, 255, 0.8); 
+}
+
+.track-card.selected::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(251, 114, 187, 0.507);
+    pointer-events: none;
 }
 
 .track-card img{

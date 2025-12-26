@@ -25,7 +25,7 @@ onMounted(async () => {
   } catch (err) {
     // maybe push failure page for errors???
     router.push('/')
-    console.err(err)
+    console.error(err)
     return
   }
 })

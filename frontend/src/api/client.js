@@ -79,6 +79,114 @@ class ApiClient {
             throw new Error(err)
         }
     }
+
+
+    // Refresh access token
+    async refresh(refresh_token) {
+        const response = await fetch(`${this.#_baseURL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token }) 
+        })
+
+        if (!response.ok) {
+            throw new Error('REFRESH_FAILED')
+        }
+
+        const data = await response.json()
+
+        // Update stored tokens
+        sessionStorage.setItem('access_token', data.access_token)
+        sessionStorage.setItem('refresh_token', data.refresh_token)
+        sessionStorage.setItem('expires_at', Date.now() + data.expires_in * 1000)
+
+        return data.access_token
+    }
+
+    // Get valid access token (refresh if needed)
+    async getAccessToken() {
+        let access_token = sessionStorage.getItem('access_token')
+        const expires_at = parseInt(sessionStorage.getItem('expires_at'), 10)
+
+        // If token is missing or expired, refresh it
+        if (!access_token || Date.now() >= expires_at) {
+            const refresh_token = sessionStorage.getItem('refresh_token')
+            
+            if (!refresh_token) {
+                throw new Error('NO_REFRESH_TOKEN')
+            }
+
+            try {
+                access_token = await this.refresh(refresh_token)
+            } catch (err) {
+                console.error('Refresh failed:', err)
+                throw new Error('REFRESH_FAILED')
+            }
+        }
+
+        return access_token
+    }
+
+
+    // Search for tracks
+    async searchTracks(title, artist, year) {
+        // Validate required fields
+        if (!artist) {
+            throw new Error('Artist is required')
+        }
+
+        // Get valid access token
+        let access_token
+        try {
+            access_token = await this.getAccessToken()
+        } catch (err) {
+            // Let component handle redirect
+            throw err
+        }
+
+        // Build query
+        let query = title || artist
+
+        // Build time range
+        const minYear = year - 5
+        const maxYear = Math.min(year + 5, new Date().getFullYear())
+        const created_at = {
+            from: `${minYear}-01-01 00:00:00`,
+            to: `${maxYear}-12-31 23:59:59`
+        }
+
+        try {
+            const response = await fetch(`${this.#_baseURL}/api/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    q: query,
+                    created_at: JSON.stringify(created_at),
+                    access: ['playable', 'preview', 'blocked'],
+                    limit: 100000,
+                    access_token
+                })
+            })
+
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.error || 'Search failed')
+            }
+
+            const data = await response.json()
+            const tracks = data
+
+            // Filter by artist
+            const filtered = tracks.filter(t =>
+                t.user.username.toLowerCase() === artist.toLowerCase()
+            )
+
+            return filtered
+        } catch (err) {
+            console.error('Search error:', err)
+            throw err
+        }
+    }
 }
 
 // Helper functions for PKCE code challenge and state
@@ -104,87 +212,3 @@ function base64UrlEncode(buffer) {
 
 // Create singleton instance
 export const apiClient = new ApiClient(import.meta.env.VITE_BASE_URL)
-
-
-
-//   // Generic request handler with token refresh
-//   async request(endpoint, options = {}) {
-//     let access_token = sessionStorage.getItem('access_token')
-//     const expires_at = parseInt(sessionStorage.getItem('expires_at'), 10)
-
-//     // Refresh token if expired
-//     if (!access_token || Date.now() >= expires_at) {
-//       const refresh_token = sessionStorage.getItem('refresh_token')
-      
-//       if (!refresh_token) {
-//         throw new Error('NO_REFRESH_TOKEN')
-//       }
-
-//       try {
-//         const refreshRes = await fetch(`${this.baseURL}/auth/refresh`, {
-//           method: 'POST',
-//           headers: { 'Content-Type': 'application/json' },
-//           body: JSON.stringify({ refresh_token })
-//         })
-
-//         if (!refreshRes.ok) {
-//           throw new Error('REFRESH_FAILED')
-//         }
-
-//         const refreshData = await refreshRes.json()
-
-//         access_token = refreshData.access_token
-//         sessionStorage.setItem('access_token', access_token)
-//         sessionStorage.setItem('refresh_token', refreshData.refresh_token)
-//         sessionStorage.setItem('expires_at', Date.now() + refreshData.expires_in * 1000)
-//       } catch (err) {
-//         console.error('Token refresh failed:', err)
-//         throw new Error('REFRESH_FAILED')
-//       }
-//     }
-
-//     // Make the actual request
-//     const response = await fetch(`${this.baseURL}${endpoint}`, {
-//       ...options,
-//       headers: {
-//         'Content-Type': 'application/json',
-//         ...options.headers
-//       }
-//     })
-
-//     if (!response.ok) {
-//       const error = await response.json().catch(() => ({ error: 'Request failed' }))
-//       throw new Error(error.error || `HTTP ${response.status}`)
-//     }
-
-//     return response.json()
-//   }
-
-//   // Search for tracks
-//   async searchTracks(title, artist, year) {
-//     const data = await this.request('/api/search', {
-//       method: 'POST',
-//       body: JSON.stringify({ title, artist, year })
-//     })
-
-//     // Filter/process data here if needed
-//     return data
-//   }
-
-//   // Get recommendations
-//   async getRecommendations(songMetadata, operation) {
-//     const data = await this.request('/api/recommend', {
-//       method: 'POST',
-//       body: JSON.stringify({ songMetadata, operation })
-//     })
-
-//     // Filter/process recommendations
-//     const recommendations = data.collection || []
-    
-//     // Additional filtering logic
-//     const filtered = recommendations.filter(track => 
-//       track.artwork_url && track.title && track.user
-//     )
-
-//     return filtered
-//   }
