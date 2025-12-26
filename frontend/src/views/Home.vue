@@ -16,11 +16,6 @@
                     placeholder="*Enter song artist*"
                     required
                 />
-                <input
-                    v-model="yearReleased"
-                    placeholder="*Enter year released*"
-                    required
-                />
                 <button type="submit" id="home-portal-button">Search</button>
             </form>
         </div>
@@ -75,7 +70,6 @@ const apiClient = inject('apiClient')
 
 const songTitle = ref('')
 const artistName = ref('')
-const yearReleased = ref('')
 
 const results = ref([])
 const currentIndex = ref(0)
@@ -126,7 +120,7 @@ const searchSongs = async (e) => {
 
     try {
         // set default to be empty???
-        results.value = await apiClient.searchTracks(songTitle.value, artistName.value, parseInt(yearReleased.value))
+        results.value = await apiClient.searchTracks(songTitle.value, artistName.value)
         currentIndex.value = 0
         selectedTrackId.value = null
     } catch (err) {

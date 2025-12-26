@@ -79,8 +79,6 @@ class ApiClient {
             throw new Error(err)
         }
     }
-
-
     // Refresh access token
     async refresh(refresh_token) {
         const response = await fetch(`${this.#_baseURL}/auth/refresh`, {
@@ -129,7 +127,7 @@ class ApiClient {
 
 
     // Search for tracks
-    async searchTracks(title, artist, year) {
+    async searchTracks(title, artist) {
         // Validate required fields
         if (!artist) {
             throw new Error('Artist is required')
@@ -147,23 +145,14 @@ class ApiClient {
         // Build query
         let query = title || artist
 
-        // Build time range
-        const minYear = year - 5
-        const maxYear = Math.min(year + 5, new Date().getFullYear())
-        const created_at = {
-            from: `${minYear}-01-01 00:00:00`,
-            to: `${maxYear}-12-31 23:59:59`
-        }
-
         try {
             const response = await fetch(`${this.#_baseURL}/api/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     q: query,
-                    created_at: JSON.stringify(created_at),
-                    access: ['playable', 'preview', 'blocked'],
-                    limit: 100000,
+                    access: 'playable,preview,blocked',
+                    limit: 5000,
                     access_token
                 })
             })
@@ -174,14 +163,14 @@ class ApiClient {
             }
 
             const data = await response.json()
-            const tracks = data
+            let tracks = data
 
             // Filter by artist
-            const filtered = tracks.filter(t =>
+            tracks = tracks.filter(t =>
                 t.user.username.toLowerCase() === artist.toLowerCase()
             )
 
-            return filtered
+            return tracks
         } catch (err) {
             console.error('Search error:', err)
             throw err
@@ -246,7 +235,7 @@ class ApiClient {
                 body: JSON.stringify({
                     genres: songMetadata.genre,
                     created_at: JSON.stringify(created_at),
-                    access: ['playable', 'preview', 'blocked'],
+                    access: 'playable,preview,blocked',
                     limit: 100000,
                     access_token
                 })
