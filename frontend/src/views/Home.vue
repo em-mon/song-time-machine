@@ -67,9 +67,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { inject } from 'vue'
 
 const router = useRouter()
 const apiClient = inject('apiClient')
@@ -121,7 +120,7 @@ function goToFuture() {
 // must click submit before clicking past or future
 // if input year current year block off future option
 // consider: error messages displayed, none returned = no songs in that year, suggest options
-
+// loading symbol when trying to fetch songs???
 const searchSongs = async (e) => {
     e.preventDefault()
 

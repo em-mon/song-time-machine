@@ -187,6 +187,89 @@ class ApiClient {
             throw err
         }
     }
+
+    async recommendTracks() {
+        // Get valid access token
+        let access_token
+        try {
+            access_token = await this.getAccessToken()
+        } catch (err) {
+            // Let component handle redirect
+            throw err
+        }
+
+        // Parse savedSong before sending
+        const savedSong = sessionStorage.getItem('savedSong')
+        const songMetadata = savedSong ? JSON.parse(savedSong) : null
+
+        const operation = sessionStorage.getItem('operation')
+            
+        if (!songMetadata) {
+            console.error('No saved song found')
+            return
+        }
+
+        // Compute the min/max dates
+        let inputYear = null
+
+        // Prefer release_year if available
+        if (songMetadata.release_year) {
+            inputYear = parseInt(songMetadata.release_year, 10)
+        } else if (songMetadata.created_date) {
+            inputYear = parseInt(songMetadata.created_date.slice(0, 4), 10)
+        }
+
+        const currentYear = new Date().getFullYear()
+
+        let minYear = 1900
+        let maxYear = currentYear
+
+        if (operation === "past") {
+            maxYear = inputYear - 1
+        } else if (operation === "future") {
+            minYear = inputYear + 1
+        }
+
+        // Convert to YYYY-MM-DD HH:MM:SS format
+        const fromDate = `${minYear}-01-01 00:00:00`
+        const toDate = `${maxYear}-12-31 23:59:59`
+
+        const created_at = {
+            "from": fromDate,
+            "to": toDate
+        }
+  
+        try {
+            const response = await fetch(`${this.#_baseURL}/api/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    genres: songMetadata.genre,
+                    created_at: JSON.stringify(created_at),
+                    access: ['playable', 'preview', 'blocked'],
+                    limit: 100000,
+                    access_token
+                })
+            })
+
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.error || 'Search failed')
+            }
+
+            const data = await response.json()
+
+            const top10 = similarityScore(data, songMetadata)
+
+            // Store results in sessionStorage
+            sessionStorage.setItem('recommendations', JSON.stringify(top10.collection))
+            
+            return
+        } catch (err) {
+            console.error('Search error:', err)
+            throw err
+        }
+    }
 }
 
 // Helper functions for PKCE code challenge and state
@@ -208,6 +291,65 @@ function base64UrlEncode(buffer) {
         .replace(/\+/g, '-')
         .replace(/\//g, '_')
         .replace(/=+$/, '')
+}
+
+function similarityScore(tracks, songMetadata) {
+    // Filter out songs by the same artist
+    // relatedTracks = relatedTracks.filter(track => 
+    //     track.user.username!== songMetadata.artist
+    // )
+
+    // Calculate similarity score for each track
+    const relatedTracks = tracks.map(track => {
+        let score = 0
+            
+        // Tag overlap (2 points per matching tag)
+        if (track.tag_list && songMetadata.tags) {
+            console.log("track tag", track.tag_list)
+            console.log("song tag", songMetadata.tags)
+            const originalTags = songMetadata.tags.toLowerCase().split(' ').filter(t => t.length > 0)
+            const trackTags = track.tag_list.toLowerCase().split(' ').filter(t => t.length > 0)
+            const overlap = originalTags.filter(tag => trackTags.includes(tag)).length
+            score += overlap * 2
+        }
+            
+        // BPM similarity (up to 5 points based on closeness)
+        if (track.bpm && songMetadata.bpm) {
+            console.log("In bpm overlap")
+            const bpmDiff = Math.abs(track.bpm - songMetadata.bpm)
+            if (bpmDiff < 5) score += 5
+            else if (bpmDiff < 10) score += 3
+            else if (bpmDiff < 20) score += 1
+        }
+            
+        return {
+            ...track,
+            similarityScore: score
+            }
+    })
+
+    // Sort by similarity score (highest first)
+    relatedTracks.sort((a, b) => b.similarityScore - a.similarityScore)
+
+    console.log('Top track scores:', relatedTracks.slice(0, 10).map(t => ({
+        title: t.title,
+        artist: t.user.username,
+        score: t.similarityScore
+    })))
+
+    // Get top 10
+    const top10Songs = relatedTracks.slice(0, 10)
+    const results = {
+        collection: top10Songs
+    }
+
+    return results
+    
+    // search for tracks with genres, tags, bpms -> filter by year released or created
+
+    // find a way to organize by percentage compatibility and return 
+
+    // return songs similar in sound (genre, bpm) and similar in meaning (lyrics, tags)
 }
 
 // Create singleton instance

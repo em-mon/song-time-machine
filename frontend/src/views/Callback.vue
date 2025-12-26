@@ -9,9 +9,8 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { inject } from 'vue'
 
 const router = useRouter()
 const apiClient = inject('apiClient')
