@@ -115,6 +115,7 @@ function goToFuture() {
 // if input year current year block off future option
 // consider: error messages displayed, none returned = no songs in that year, suggest options
 // loading symbol when trying to fetch songs???
+// doesnt work with really old songs???
 const searchSongs = async (e) => {
     e.preventDefault()
 
@@ -145,7 +146,7 @@ const saveSong = async (track) => {
         title: track.title,
         image: track.artwork_url,
         bpm: track.bpm,
-        created_date: track.created_at,
+        year: track.created_at.slice(0, 4),
         genre: track.genre,
         urn: track.urn,
         key_signature: track.key_signature,

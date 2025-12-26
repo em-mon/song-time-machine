@@ -198,43 +198,12 @@ class ApiClient {
             return
         }
 
-        // Compute the min/max dates
-        let inputYear = null
-
-        // Prefer release_year if available
-        if (songMetadata.release_year) {
-            inputYear = parseInt(songMetadata.release_year, 10)
-        } else if (songMetadata.created_date) {
-            inputYear = parseInt(songMetadata.created_date.slice(0, 4), 10)
-        }
-
-        const currentYear = new Date().getFullYear()
-
-        let minYear = 1900
-        let maxYear = currentYear
-
-        if (operation === "past") {
-            maxYear = inputYear - 1
-        } else if (operation === "future") {
-            minYear = inputYear + 1
-        }
-
-        // Convert to YYYY-MM-DD HH:MM:SS format
-        const fromDate = `${minYear}-01-01 00:00:00`
-        const toDate = `${maxYear}-12-31 23:59:59`
-
-        const created_at = {
-            "from": fromDate,
-            "to": toDate
-        }
-  
         try {
             const response = await fetch(`${this.#_baseURL}/api/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     genres: songMetadata.genre,
-                    created_at: JSON.stringify(created_at),
                     access: 'playable,preview,blocked',
                     limit: 100000,
                     access_token
@@ -248,7 +217,7 @@ class ApiClient {
 
             const data = await response.json()
 
-            const top10 = similarityScore(data, songMetadata)
+            const top10 = similarityScore(data, songMetadata, operation)
 
             // Store results in sessionStorage
             sessionStorage.setItem('recommendations', JSON.stringify(top10.collection))
@@ -282,11 +251,38 @@ function base64UrlEncode(buffer) {
         .replace(/=+$/, '')
 }
 
-function similarityScore(tracks, songMetadata) {
+function similarityScore(tracks, songMetadata, op) {
     // Filter out songs by the same artist
     // relatedTracks = relatedTracks.filter(track => 
     //     track.user.username!== songMetadata.artist
     // )
+
+    // Filter songs by release year
+    if (op === "past") {
+        tracks = tracks.filter(track => {
+            // Get track year (prefer release_year, fallback to created_at)
+            const trackYear = track.release_year 
+                ? parseInt(track.release_year, 10)
+                : new Date(track.created_at).getFullYear()
+            
+            // Get your song's year
+            const mySongYear = parseInt(songMetadata.year, 10)
+            
+            // Keep only tracks BEFORE your song
+            return trackYear < mySongYear
+        })
+    } else if (op === "future") {
+        tracks = tracks.filter(track => {
+            const trackYear = track.release_year 
+                ? parseInt(track.release_year, 10)
+                : new Date(track.created_at).getFullYear()
+            
+            const mySongYear = parseInt(songMetadata.year, 10)
+            
+            // Keep only tracks AFTER your song
+            return trackYear > mySongYear
+        })
+    }
 
     // Calculate similarity score for each track
     const relatedTracks = tracks.map(track => {
@@ -300,15 +296,6 @@ function similarityScore(tracks, songMetadata) {
             const trackTags = track.tag_list.toLowerCase().split(' ').filter(t => t.length > 0)
             const overlap = originalTags.filter(tag => trackTags.includes(tag)).length
             score += overlap * 2
-        }
-            
-        // BPM similarity (up to 5 points based on closeness)
-        if (track.bpm && songMetadata.bpm) {
-            console.log("In bpm overlap")
-            const bpmDiff = Math.abs(track.bpm - songMetadata.bpm)
-            if (bpmDiff < 5) score += 5
-            else if (bpmDiff < 10) score += 3
-            else if (bpmDiff < 20) score += 1
         }
             
         return {
