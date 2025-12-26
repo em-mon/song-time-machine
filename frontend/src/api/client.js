@@ -198,12 +198,18 @@ class ApiClient {
             return
         }
 
+        const bpm = {
+            from: parseInt(songMetadata.bpm,10) - 10,
+            to: parseInt(songMetadata.bpm,10) + 10
+        }
+
         try {
             const response = await fetch(`${this.#_baseURL}/api/search`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     genres: songMetadata.genre,
+                    bpm: bpm,
                     access: 'playable,preview,blocked',
                     limit: 100000,
                     access_token
@@ -256,6 +262,15 @@ function similarityScore(tracks, songMetadata, op) {
     // relatedTracks = relatedTracks.filter(track => 
     //     track.user.username!== songMetadata.artist
     // )
+    let myYear
+    if (songMetadata.release_year & songMetadata.year) {
+        myYear = Math.min(parseInt(songMetadata.release_year, 10), parseInt(songMetadata.year, 10))
+    } else if (songMetadata.release_year || songMetadata.year) {
+        myYear = songMetadata.release_year || songMetadata.year
+    } else {
+        // no year so do warning that results aren't accurate???
+    }
+    console.log("release year:", songMetadata.rel)
 
     // Filter songs by release year
     if (op === "past") {
@@ -265,22 +280,17 @@ function similarityScore(tracks, songMetadata, op) {
                 ? parseInt(track.release_year, 10)
                 : new Date(track.created_at).getFullYear()
             
-            // Get your song's year
-            const mySongYear = parseInt(songMetadata.year, 10)
-            
             // Keep only tracks BEFORE your song
-            return trackYear < mySongYear
+            return trackYear < myYear
         })
     } else if (op === "future") {
         tracks = tracks.filter(track => {
             const trackYear = track.release_year 
                 ? parseInt(track.release_year, 10)
                 : new Date(track.created_at).getFullYear()
-            
-            const mySongYear = parseInt(songMetadata.year, 10)
-            
+                        
             // Keep only tracks AFTER your song
-            return trackYear > mySongYear
+            return trackYear > myYear
         })
     }
 
