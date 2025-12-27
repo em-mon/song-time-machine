@@ -258,10 +258,6 @@ function base64UrlEncode(buffer) {
 }
 
 function similarityScore(tracks, songMetadata, op) {
-    // Filter out songs by the same artist
-    // relatedTracks = relatedTracks.filter(track => 
-    //     track.user.username!== songMetadata.artist
-    // )
     let myYear
     if (songMetadata.release_year & songMetadata.year) {
         myYear = Math.min(parseInt(songMetadata.release_year, 10), parseInt(songMetadata.year, 10))
