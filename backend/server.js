@@ -5,12 +5,15 @@ import cors from 'cors'
 const app = express()
 
 app.use(express.json())
+
 app.use(cors({
   origin: "https://song-time-machine.vercel.app",
   methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],  
+  credentials: true
 }))
+
+app.options('*', cors())
 
 // Exchange for token 
 app.post('/auth/token', async (req, res) => {
