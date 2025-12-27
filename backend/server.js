@@ -4,16 +4,21 @@ import cors from 'cors'
 
 const app = express()
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://song-time-machine.vercel.app')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+  res.setHeader('Access-Control-Allow-Credentials', 'true')
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+  
+  next()
+})
+
 app.use(express.json())
-
-app.use(cors({
-  origin: "https://song-time-machine.vercel.app",
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],  
-  credentials: true
-}))
-
-app.options('*', cors())
 
 // Exchange for token 
 app.post('/auth/token', async (req, res) => {
