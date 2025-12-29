@@ -3,7 +3,7 @@
 Discover music from the past or future based on your favorite songs! Select any track and travel through time to find similar songs released before or after it.
 
 ## Live Demo
-**Try it here:** [https://song-time-machine.vercel.app](https://song-time-machine.vercel.app)
+**Try it here:** [[https://song-time-machine.vercel.app](https://song-time-machine.vercel.app)]
 
 No installation required - just click and explore!
 
